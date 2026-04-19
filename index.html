@@ -3,1121 +3,921 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>LUMEX — AI Image Enhancement</title>
+<title>PixelUp — AI Image Enhancer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --gold:#c8a96e;
-  --gold-bright:#f0d090;
-  --gold-dim:#8a6a30;
-  --bg:#050508;
-  --bg2:#08080f;
-  --glass:rgba(255,255,255,0.03);
-  --glass-border:rgba(200,169,110,0.18);
-  --text:#e8e0d0;
-  --text-dim:#888070;
+  --blue:#2563eb;--blue2:#1d4ed8;--blue3:#1e40af;
+  --blue-light:#3b82f6;--blue-pale:#eff6ff;--blue-mid:#dbeafe;
+  --white:#fff;--text:#1e293b;--text-mid:#475569;
+  --text-light:#94a3b8;--border:rgba(37,99,235,.13);
+  --glass:rgba(255,255,255,.72);--radius:16px;
 }
-html{scroll-behavior:smooth}
+html,body{height:100%;overflow-x:hidden}
 body{
-  background:var(--bg);
+  font-family:'Plus Jakarta Sans',sans-serif;
+  background:linear-gradient(135deg,#dbeafe 0%,#eff6ff 40%,#e0f2fe 100%);
   color:var(--text);
-  font-family:'DM Sans',sans-serif;
-  overflow-x:hidden;
-  cursor:none;
 }
+#cvs{position:fixed;inset:0;z-index:0;pointer-events:none}
+#app{position:relative;z-index:10;min-height:100vh;display:flex;flex-direction:column}
 
-/* ── Custom Cursor ── */
-#cursor{
-  position:fixed;width:12px;height:12px;
-  border-radius:50%;background:var(--gold);
-  pointer-events:none;z-index:9999;
-  transform:translate(-50%,-50%);
-  transition:transform .08s,width .2s,height .2s,opacity .2s;
-  mix-blend-mode:difference;
+/* ── HEADER ── */
+header{
+  position:sticky;top:0;z-index:200;
+  background:rgba(255,255,255,.8);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
 }
-#cursor-ring{
-  position:fixed;width:40px;height:40px;
-  border-radius:50%;border:1px solid var(--gold);
-  pointer-events:none;z-index:9998;
-  transform:translate(-50%,-50%);
-  transition:transform .18s cubic-bezier(.2,.8,.2,1),
-             width .3s,height .3s,opacity .3s;
-  opacity:.5;
-}
-body:hover #cursor{opacity:1}
-
-/* ── Canvas ── */
-#bg-canvas{
-  position:fixed;top:0;left:0;width:100%;height:100%;
-  z-index:0;pointer-events:none;
-}
-
-/* ── Noise overlay ── */
-#noise{
-  position:fixed;top:0;left:0;width:100%;height:100%;
-  z-index:1;pointer-events:none;opacity:.03;
-  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-}
-
-/* ── Main layout ── */
-#app{position:relative;z-index:10}
-
-/* ── NAV ── */
-nav{
-  position:fixed;top:0;left:0;right:0;z-index:100;
+.hdr{
+  max-width:900px;margin:0 auto;
   display:flex;align-items:center;justify-content:space-between;
-  padding:1.5rem 4rem;
-  border-bottom:1px solid rgba(200,169,110,0.06);
-  backdrop-filter:blur(20px);
-  background:rgba(5,5,8,0.6);
+  padding:0 1.25rem;height:58px;
 }
 .logo{
-  font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;
-  letter-spacing:0.15em;color:var(--gold);
-  text-transform:uppercase;
+  display:flex;align-items:center;gap:.5rem;
+  font-weight:800;font-size:1.2rem;color:var(--blue);
 }
-.logo span{color:var(--text);font-weight:400}
-.nav-links{display:flex;gap:2.5rem;list-style:none}
-.nav-links a{
-  color:var(--text-dim);font-size:.85rem;letter-spacing:.08em;
-  text-decoration:none;text-transform:uppercase;
-  transition:color .3s;
+.logo-box{
+  width:34px;height:34px;border-radius:10px;
+  background:linear-gradient(135deg,var(--blue),var(--blue-light));
+  display:flex;align-items:center;justify-content:center;
+  font-size:1rem;box-shadow:0 3px 12px rgba(37,99,235,.32);
 }
-.nav-links a:hover{color:var(--gold)}
-.nav-badge{
-  background:var(--gold);color:#000;
-  font-size:.7rem;font-weight:700;letter-spacing:.1em;
-  padding:.35rem 1rem;border-radius:2rem;text-transform:uppercase;
+.hdr-right{display:flex;align-items:center;gap:.65rem}
+.free-badge{
+  background:var(--blue-pale);color:var(--blue);
+  font-size:.7rem;font-weight:700;padding:.25rem .75rem;
+  border-radius:20px;border:1px solid var(--blue-mid);
 }
+.menu-btn{
+  width:38px;height:38px;border-radius:10px;
+  background:var(--glass);border:1px solid var(--border);
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:5px;cursor:pointer;transition:.2s;
+  backdrop-filter:blur(8px);
+}
+.menu-btn:hover{background:#fff;box-shadow:0 2px 12px rgba(37,99,235,.15)}
+.menu-btn span{
+  display:block;width:18px;height:2px;border-radius:2px;
+  background:var(--blue);transition:all .25s;
+}
+.menu-btn.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.menu-btn.open span:nth-child(2){opacity:0;transform:scaleX(0)}
+.menu-btn.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.dropdown{
+  position:absolute;top:66px;right:1.25rem;
+  background:rgba(255,255,255,.97);backdrop-filter:blur(20px);
+  border:1px solid var(--border);border-radius:14px;
+  padding:.5rem;min-width:185px;
+  box-shadow:0 8px 32px rgba(37,99,235,.15);
+  display:none;z-index:300;
+  animation:dropIn .2s cubic-bezier(.2,.8,.2,1);
+}
+.dropdown.show{display:block}
+@keyframes dropIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.dd-item{
+  display:flex;align-items:center;gap:.65rem;
+  padding:.65rem .85rem;border-radius:10px;
+  font-size:.875rem;font-weight:600;color:var(--text-mid);
+  cursor:pointer;transition:.18s;
+}
+.dd-item:hover,.dd-item.act{background:var(--blue-pale);color:var(--blue)}
+.dd-sep{height:1px;background:var(--border);margin:.35rem 0}
 
-/* ── HERO ── */
+/* ── TABS ── */
+.tabs{
+  display:flex;gap:.3rem;max-width:900px;margin:0 auto;
+  padding:.85rem 1.25rem .3rem;overflow-x:auto;scrollbar-width:none;
+}
+.tabs::-webkit-scrollbar{display:none}
+.tab{
+  flex-shrink:0;padding:.48rem 1.1rem;border-radius:20px;
+  font-size:.81rem;font-weight:700;
+  border:1.5px solid var(--border);background:var(--glass);
+  color:var(--text-mid);cursor:pointer;transition:.2s;backdrop-filter:blur(8px);
+}
+.tab.active{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 3px 14px rgba(37,99,235,.3)}
+.tab:not(.active):hover{background:#fff;border-color:var(--blue-light);color:var(--blue)}
+
+/* ── PAGES ── */
+.page{display:none;max-width:900px;margin:0 auto;padding:.75rem 1.25rem 4rem}
+.page.active{display:block}
+
+/* ══════════════════════════════════
+   HERO SECTION — Big & Beautiful
+══════════════════════════════════ */
 .hero{
-  min-height:100vh;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  text-align:center;padding:8rem 2rem 4rem;
+  text-align:center;padding:3.5rem 1rem 2.5rem;
   position:relative;
 }
-.hero-label{
-  font-size:.75rem;letter-spacing:.3em;text-transform:uppercase;
-  color:var(--gold);margin-bottom:2rem;
-  display:flex;align-items:center;gap:1rem;
-  opacity:0;animation:fadeUp .8s .3s ease forwards;
+.hero-badge{
+  display:inline-flex;align-items:center;gap:.4rem;
+  background:rgba(37,99,235,.08);border:1px solid var(--blue-mid);
+  border-radius:20px;padding:.35rem 1rem;font-size:.75rem;
+  font-weight:700;color:var(--blue);margin-bottom:1.5rem;
+  animation:fadeUp .6s ease both;
 }
-.hero-label::before,.hero-label::after{
-  content:'';display:block;width:40px;height:1px;background:var(--gold);opacity:.4;
-}
-h1{
-  font-family:'Syne',sans-serif;font-size:clamp(3.5rem,8vw,8rem);
-  font-weight:800;line-height:.92;letter-spacing:-.02em;
-  margin-bottom:2rem;
-  opacity:0;animation:fadeUp .9s .5s ease forwards;
-}
-h1 .gold{
-  background:linear-gradient(135deg,var(--gold-dim),var(--gold-bright),var(--gold-dim));
+.hero h1{
+  font-size:clamp(2.2rem,7vw,3.4rem);font-weight:800;
+  line-height:1.15;letter-spacing:-.02em;
+  background:linear-gradient(135deg,#1e40af 0%,#2563eb 50%,#3b82f6 100%);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  background-clip:text;background-size:200%;
-  animation:shimmer 4s infinite linear;
+  background-clip:text;margin-bottom:1rem;
+  animation:fadeUp .6s .1s ease both;
 }
-@keyframes shimmer{0%{background-position:0% 50%}100%{background-position:200% 50%}}
-.hero-sub{
-  max-width:520px;color:var(--text-dim);line-height:1.8;
-  font-size:1.05rem;margin:0 auto 3rem;
-  opacity:0;animation:fadeUp .9s .7s ease forwards;
+.hero p{
+  color:var(--text-mid);font-size:1rem;line-height:1.75;
+  max-width:460px;margin:0 auto 2rem;
+  animation:fadeUp .6s .2s ease both;
 }
-.hero-cta{
-  display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;
-  opacity:0;animation:fadeUp .9s .9s ease forwards;
+.hero-pills{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:.5rem;
+  margin-bottom:2.2rem;
+  animation:fadeUp .6s .3s ease both;
 }
-.btn-primary{
-  background:var(--gold);color:#000;
-  font-family:'Syne',sans-serif;font-weight:700;
-  font-size:.85rem;letter-spacing:.1em;text-transform:uppercase;
-  padding:1rem 2.5rem;border-radius:4rem;border:none;cursor:none;
-  transition:transform .3s,box-shadow .3s;
-  box-shadow:0 0 40px rgba(200,169,110,0.3);
-  text-decoration:none;
+.h-pill{
+  display:flex;align-items:center;gap:.35rem;
+  background:rgba(255,255,255,.75);backdrop-filter:blur(8px);
+  border:1px solid var(--border);border-radius:20px;
+  padding:.38rem .85rem;font-size:.78rem;font-weight:600;color:var(--text-mid);
 }
-.btn-primary:hover{transform:translateY(-2px);box-shadow:0 0 60px rgba(200,169,110,0.5)}
-.btn-ghost{
-  background:transparent;color:var(--text);
-  font-family:'Syne',sans-serif;font-weight:600;
-  font-size:.85rem;letter-spacing:.1em;text-transform:uppercase;
-  padding:1rem 2.5rem;border-radius:4rem;
-  border:1px solid var(--glass-border);cursor:none;
-  transition:border-color .3s,color .3s;
-  text-decoration:none;
+/* Hero stats */
+.hero-stats{
+  display:flex;justify-content:center;gap:0;
+  background:rgba(255,255,255,.65);backdrop-filter:blur(12px);
+  border:1px solid var(--border);border-radius:var(--radius);
+  overflow:hidden;margin-bottom:.5rem;
+  animation:fadeUp .6s .4s ease both;
 }
-.btn-ghost:hover{border-color:var(--gold);color:var(--gold)}
-
-/* Scroll indicator */
-.scroll-indicator{
-  position:absolute;bottom:3rem;left:50%;transform:translateX(-50%);
-  display:flex;flex-direction:column;align-items:center;gap:.5rem;
-  color:var(--text-dim);font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;
-  opacity:0;animation:fadeIn 1s 1.5s ease forwards;
-}
-.scroll-line{
-  width:1px;height:50px;background:linear-gradient(var(--gold),transparent);
-  animation:scrollPulse 2s infinite;
-}
-@keyframes scrollPulse{0%,100%{opacity:.3;transform:scaleY(1)}50%{opacity:1;transform:scaleY(1.2)}}
-
-/* ── STATS BAR ── */
-.stats-bar{
-  display:flex;justify-content:center;flex-wrap:wrap;
-  gap:0;border-top:1px solid var(--glass-border);
-  border-bottom:1px solid var(--glass-border);
-  background:rgba(200,169,110,0.02);
-}
-.stat{
-  flex:1;min-width:180px;padding:2.5rem;text-align:center;
-  border-right:1px solid var(--glass-border);
+.h-stat{
+  flex:1;padding:1.1rem .5rem;text-align:center;
+  border-right:1px solid var(--border);
   position:relative;overflow:hidden;
 }
-.stat:last-child{border-right:none}
-.stat::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,transparent,var(--gold),transparent);
-  transform:scaleX(0);transition:transform .5s ease;
+.h-stat:last-child{border-right:none}
+.h-stat::after{
+  content:'';position:absolute;bottom:0;left:20%;right:20%;
+  height:2px;background:linear-gradient(90deg,transparent,var(--blue),transparent);
+  transform:scaleX(0);transition:transform .4s;border-radius:2px;
 }
-.stat:hover::before{transform:scaleX(1)}
-.stat-num{
-  font-family:'Syne',sans-serif;font-size:2.5rem;font-weight:800;
-  color:var(--gold);line-height:1;display:block;
+.h-stat:hover::after{transform:scaleX(1)}
+.h-stat-num{
+  font-size:1.6rem;font-weight:800;color:var(--blue);
+  line-height:1;display:block;
 }
-.stat-label{
-  font-size:.75rem;letter-spacing:.15em;text-transform:uppercase;
-  color:var(--text-dim);margin-top:.5rem;display:block;
+.h-stat-lbl{
+  font-size:.7rem;font-weight:600;color:var(--text-light);
+  text-transform:uppercase;letter-spacing:.05em;margin-top:.3rem;display:block;
 }
-
-/* ── SECTION COMMONS ── */
-section{padding:8rem 4rem}
-.section-header{text-align:center;margin-bottom:5rem}
-.section-tag{
-  font-size:.7rem;letter-spacing:.3em;text-transform:uppercase;
-  color:var(--gold);display:block;margin-bottom:1.5rem;
+/* Divider */
+.hero-divider{
+  display:flex;align-items:center;gap:1rem;
+  margin:1.5rem 0 0;color:var(--text-light);font-size:.8rem;font-weight:600;
 }
-.section-title{
-  font-family:'Syne',sans-serif;font-size:clamp(2rem,4vw,3.5rem);
-  font-weight:800;line-height:1.1;
+.hero-divider::before,.hero-divider::after{
+  content:'';flex:1;height:1px;
+  background:linear-gradient(90deg,transparent,var(--blue-mid),transparent);
 }
-
-/* ── FEATURES GRID ── */
-.features-grid{
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
-  gap:1.5px;background:var(--glass-border);
-  border:1.5px solid var(--glass-border);
-  border-radius:1.5rem;overflow:hidden;
-  max-width:1200px;margin:0 auto;
-}
-.feature-card{
-  background:var(--bg2);padding:3rem;
-  position:relative;overflow:hidden;
-  transition:background .4s;
-}
-.feature-card::after{
-  content:'';position:absolute;bottom:0;left:0;right:0;
-  height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);
-  opacity:0;transition:opacity .4s;
-}
-.feature-card:hover{background:rgba(200,169,110,0.04)}
-.feature-card:hover::after{opacity:1}
-.feature-icon{
-  width:56px;height:56px;border-radius:16px;
-  display:flex;align-items:center;justify-content:center;
-  background:rgba(200,169,110,0.08);border:1px solid var(--glass-border);
-  font-size:1.5rem;margin-bottom:2rem;
-  transition:transform .4s,box-shadow .4s;
-}
-.feature-card:hover .feature-icon{
-  transform:scale(1.1);
-  box-shadow:0 0 30px rgba(200,169,110,0.2);
-}
-.feature-title{
-  font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;
-  margin-bottom:.75rem;color:var(--text);
-}
-.feature-desc{color:var(--text-dim);line-height:1.7;font-size:.9rem}
-.feature-tag{
-  display:inline-block;margin-top:1.5rem;
-  font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;
-  color:var(--gold);padding:.3rem .8rem;
-  border:1px solid rgba(200,169,110,0.25);border-radius:4rem;
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(20px)}
+  to{opacity:1;transform:translateY(0)}
 }
 
-/* ── DEMO SECTION ── */
-.demo-section{
-  max-width:1100px;margin:0 auto;
-  display:grid;grid-template-columns:1fr 1.2fr;gap:4rem;align-items:start;
-}
+/* ── UPLOAD ── */
 .upload-zone{
-  border:2px dashed var(--glass-border);border-radius:1.5rem;
-  padding:4rem 2rem;text-align:center;position:relative;
-  transition:border-color .3s,background .3s;cursor:none;
-  background:var(--glass);
+  border:2px dashed rgba(37,99,235,.28);border-radius:var(--radius);
+  background:var(--glass);backdrop-filter:blur(12px);
+  padding:2.5rem 2rem;text-align:center;cursor:pointer;transition:.25s;
+  margin-top:.75rem;
 }
 .upload-zone:hover,.upload-zone.drag{
-  border-color:var(--gold);background:rgba(200,169,110,0.04);
+  border-color:var(--blue);background:rgba(255,255,255,.9);
+  box-shadow:0 6px 28px rgba(37,99,235,.13);
 }
-.upload-icon{font-size:3rem;margin-bottom:1.5rem;display:block}
-.upload-text{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:.5rem}
-.upload-hint{color:var(--text-dim);font-size:.85rem}
-#file-input{display:none}
+.upload-zone input{display:none}
+.u-icon{
+  width:64px;height:64px;border-radius:18px;
+  background:linear-gradient(135deg,#dbeafe,#bfdbfe);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.8rem;margin:0 auto 1rem;
+  transition:transform .3s;
+}
+.upload-zone:hover .u-icon{transform:scale(1.08)}
+.u-title{font-weight:700;font-size:1.05rem;margin-bottom:.3rem}
+.u-hint{color:var(--text-light);font-size:.82rem}
+.u-chip{
+  display:inline-block;margin-top:1rem;
+  background:linear-gradient(135deg,var(--blue2),var(--blue-light));
+  color:#fff;font-weight:700;font-size:.84rem;
+  padding:.6rem 1.6rem;border-radius:8px;
+  box-shadow:0 3px 12px rgba(37,99,235,.28);
+  transition:.2s;
+}
+.upload-zone:hover .u-chip{transform:translateY(-1px);box-shadow:0 5px 16px rgba(37,99,235,.38)}
+.prev-img{max-width:100%;max-height:240px;border-radius:10px;object-fit:contain;margin-bottom:.5rem}
+.prev-name{font-size:.8rem;color:var(--text-mid);font-weight:600}
 
 /* Controls */
-.controls{display:flex;flex-direction:column;gap:1.5rem}
-.control-group{
-  background:var(--glass);border:1px solid var(--glass-border);
-  border-radius:1rem;padding:1.5rem;
+.ctrl-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem}
+@media(max-width:540px){.ctrl-row{grid-template-columns:1fr}}
+.ctrl-card{
+  background:var(--glass);backdrop-filter:blur(12px);
+  border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem;
 }
-.ctrl-label{
-  font-family:'Syne',sans-serif;font-size:.8rem;
-  letter-spacing:.1em;text-transform:uppercase;
-  color:var(--text-dim);margin-bottom:1rem;display:block;
+.ctrl-head{
+  font-size:.72rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.07em;color:var(--text-light);margin-bottom:.85rem;
 }
-.toggle-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
-.toggle-row:last-child{margin-bottom:0}
-.toggle-name{font-size:.9rem;color:var(--text)}
-.toggle{
-  position:relative;width:46px;height:24px;cursor:none;
+.tog-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.42rem 0;border-bottom:1px solid rgba(37,99,235,.07);
 }
-.toggle input{display:none}
-.toggle-track{
-  position:absolute;inset:0;border-radius:12px;
-  background:rgba(255,255,255,0.08);transition:background .3s;
+.tog-row:last-child{border:none}
+.tog-name{display:flex;align-items:center;gap:.45rem;font-size:.875rem;font-weight:500}
+.tog{position:relative;width:40px;height:22px;cursor:pointer;flex-shrink:0}
+.tog input{display:none}
+.tog-track{position:absolute;inset:0;border-radius:11px;background:#cbd5e1;transition:.22s}
+.tog input:checked+.tog-track{background:var(--blue)}
+.tog-thumb{
+  position:absolute;top:3px;left:3px;width:16px;height:16px;
+  border-radius:50%;background:#fff;
+  box-shadow:0 1px 4px rgba(0,0,0,.18);transition:.22s;
 }
-.toggle input:checked + .toggle-track{background:var(--gold)}
-.toggle-thumb{
-  position:absolute;top:3px;left:3px;width:18px;height:18px;
-  border-radius:50%;background:#000;transition:transform .3s;
+.tog input:checked~.tog-thumb{transform:translateX(18px)}
+.sc-btns{display:flex;gap:.5rem;margin-top:.2rem}
+.sc-btn{
+  flex:1;padding:.6rem;border-radius:8px;
+  border:1.5px solid var(--border);background:rgba(255,255,255,.7);
+  color:var(--text-mid);font-family:inherit;font-weight:700;
+  font-size:.9rem;cursor:pointer;transition:.2s;
 }
-.toggle input:checked ~ .toggle-thumb{transform:translateX(22px)}
-
-/* Scale selector */
-.scale-btns{display:flex;gap:.75rem}
-.scale-btn{
-  flex:1;padding:.7rem;border-radius:.6rem;
-  border:1px solid var(--glass-border);background:transparent;
-  color:var(--text-dim);font-family:'Syne',sans-serif;
-  font-size:.85rem;font-weight:700;cursor:none;transition:all .25s;
-}
-.scale-btn.active,.scale-btn:hover{
-  background:var(--gold);color:#000;border-color:var(--gold);
-}
-
-/* Progress */
-.progress-wrap{
-  height:3px;background:rgba(255,255,255,0.05);
-  border-radius:2px;overflow:hidden;
-  position:relative;margin-top:1rem;display:none;
-}
-.progress-bar{
-  height:100%;width:0;border-radius:2px;
-  background:linear-gradient(90deg,var(--gold-dim),var(--gold-bright));
-  transition:width .4s ease;box-shadow:0 0 12px var(--gold);
+.sc-btn.active,.sc-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-pale)}
+.quality-info{
+  margin-top:1rem;padding-top:.9rem;border-top:1px solid rgba(37,99,235,.08);
+  font-size:.8rem;color:var(--text-mid);line-height:1.7;
 }
 
-/* Result */
-.result-box{
-  border:1px solid var(--glass-border);border-radius:1rem;
-  overflow:hidden;position:relative;display:none;margin-top:1.5rem;
-  aspect-ratio:4/3;background:var(--bg2);
+/* Enhance btn */
+.enh-btn{
+  width:100%;margin-top:1rem;
+  background:linear-gradient(135deg,var(--blue3),var(--blue2),var(--blue-light));
+  color:#fff;border:none;border-radius:var(--radius);
+  padding:1rem;font-family:inherit;font-size:1rem;font-weight:700;
+  cursor:pointer;box-shadow:0 4px 20px rgba(37,99,235,.35);transition:.25s;
+  display:flex;align-items:center;justify-content:center;gap:.6rem;
 }
-.result-box img{width:100%;height:100%;object-fit:contain}
-.result-badge{
-  position:absolute;top:1rem;right:1rem;
-  background:rgba(5,5,8,.85);border:1px solid var(--glass-border);
-  padding:.4rem .8rem;border-radius:4rem;
-  font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);
-}
-.compare-slider{
-  position:absolute;inset:0;cursor:none;
-}
-
-/* Run button */
-.run-btn{
-  width:100%;padding:1.1rem;
-  background:linear-gradient(135deg,var(--gold-dim),var(--gold));
-  color:#000;font-family:'Syne',sans-serif;font-weight:800;
-  font-size:.9rem;letter-spacing:.12em;text-transform:uppercase;
-  border:none;border-radius:.8rem;cursor:none;
-  box-shadow:0 8px 30px rgba(200,169,110,0.3);
-  transition:transform .25s,box-shadow .25s;
-  display:flex;align-items:center;justify-content:center;gap:.75rem;
-}
-.run-btn:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(200,169,110,0.45)}
-.run-btn:disabled{opacity:.4;transform:none;cursor:not-allowed}
-.spinner{
-  width:16px;height:16px;border:2px solid rgba(0,0,0,.3);
-  border-top-color:#000;border-radius:50%;
+.enh-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 30px rgba(37,99,235,.45)}
+.enh-btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.spin{
+  width:17px;height:17px;border:2.5px solid rgba(255,255,255,.3);
+  border-top-color:#fff;border-radius:50%;
   animation:spin .7s linear infinite;display:none;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
+.prog-wrap{height:6px;background:rgba(37,99,235,.1);border-radius:3px;display:none;margin-top:.75rem}
+.prog-bar{
+  height:100%;width:0;border-radius:3px;
+  background:linear-gradient(90deg,var(--blue2),var(--blue-light));transition:width .4s ease;
+}
 
-/* ── API REFERENCE ── */
-.api-grid{
-  display:grid;grid-template-columns:1fr 1fr;gap:2rem;
-  max-width:1100px;margin:0 auto;
+/* Result */
+.result-sec{display:none;margin-top:1rem}
+.r-lbl{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-light);margin-bottom:.6rem}
+.r-img-wrap{
+  border-radius:var(--radius);overflow:hidden;
+  border:1px solid var(--border);background:rgba(255,255,255,.5);
+  position:relative;backdrop-filter:blur(8px);
 }
-.code-card{
-  background:var(--bg2);border:1px solid var(--glass-border);
-  border-radius:1rem;overflow:hidden;
+.r-img-wrap img{width:100%;max-height:340px;object-fit:contain;display:block}
+.r-tag{
+  position:absolute;top:.65rem;right:.65rem;
+  background:rgba(37,99,235,.88);color:#fff;
+  font-size:.68rem;font-weight:700;padding:.28rem .7rem;border-radius:20px;
 }
-.code-header{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:.8rem 1.2rem;border-bottom:1px solid var(--glass-border);
-  background:rgba(200,169,110,0.04);
+.dl-box{
+  margin-top:.8rem;background:var(--glass);backdrop-filter:blur(12px);
+  border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem;
 }
-.code-title{
-  font-family:'Syne',sans-serif;font-size:.8rem;
-  letter-spacing:.1em;color:var(--text-dim);text-transform:uppercase;
+.dl-title{font-weight:700;font-size:.92rem;margin-bottom:.18rem}
+.dl-sub{color:var(--text-light);font-size:.78rem;margin-bottom:.85rem}
+.dl-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+@media(max-width:420px){.dl-grid{grid-template-columns:1fr}}
+.dl-btn{
+  border-radius:10px;padding:.8rem 1rem;font-family:inherit;
+  font-size:.85rem;font-weight:700;cursor:pointer;border:none;
+  transition:.2s;text-align:left;display:flex;flex-direction:column;gap:.15rem;
 }
-.method-badge{
-  font-size:.7rem;font-weight:700;letter-spacing:.08em;
-  padding:.25rem .6rem;border-radius:.3rem;
-}
-.method-badge.post{background:rgba(100,220,100,.15);color:#6ddc6d}
-.method-badge.get{background:rgba(100,160,255,.15);color:#70aaff}
-pre{
-  padding:1.5rem;overflow-x:auto;
-  font-size:.78rem;line-height:1.8;color:#c8bfaf;
-  font-family:'Courier New',monospace;
-}
-.kw{color:var(--gold)}
-.str{color:#a8d8a8}
-.cmt{color:#556}
-.copy-btn{
-  background:transparent;border:1px solid var(--glass-border);
-  color:var(--text-dim);font-size:.7rem;padding:.3rem .7rem;
-  border-radius:.4rem;cursor:none;transition:all .25s;
-}
-.copy-btn:hover{border-color:var(--gold);color:var(--gold)}
+.dl-free{background:var(--blue-pale);color:var(--blue);border:1.5px solid #93c5fd}
+.dl-free:hover{background:var(--blue-mid);transform:translateY(-1px)}
+.dl-4k{background:linear-gradient(135deg,var(--blue2),var(--blue));color:#fff;box-shadow:0 4px 14px rgba(37,99,235,.28)}
+.dl-4k:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(37,99,235,.38)}
+.dl-q{font-size:1rem;font-weight:800}
+.dl-n{font-size:.7rem;font-weight:500;opacity:.75}
 
-/* ── PIPELINE VISUALISER ── */
-.pipeline{
+/* ── FEATURES PAGE ── */
+.feat-hero{text-align:center;padding:2rem 0 2.5rem}
+.feat-hero h2{
+  font-size:clamp(1.6rem,4vw,2.2rem);font-weight:800;
+  background:linear-gradient(135deg,var(--blue2),var(--blue-light));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;margin-bottom:.6rem;
+}
+.feat-hero p{color:var(--text-mid);font-size:.92rem;line-height:1.7}
+.feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:500px){.feat-grid{grid-template-columns:1fr}}
+.feat-card{
+  background:var(--glass);backdrop-filter:blur(12px);
+  border:1px solid var(--border);border-radius:var(--radius);
+  padding:1.4rem;transition:.25s;
+}
+.feat-card:hover{transform:translateY(-3px);box-shadow:0 8px 28px rgba(37,99,235,.13)}
+.feat-ico{
+  width:48px;height:48px;border-radius:12px;
+  background:linear-gradient(135deg,#dbeafe,#bfdbfe);
   display:flex;align-items:center;justify-content:center;
-  flex-wrap:wrap;gap:0;max-width:900px;margin:0 auto;
+  font-size:1.4rem;margin-bottom:.9rem;
 }
-.pipe-step{
-  display:flex;flex-direction:column;align-items:center;
-  gap:1rem;padding:2rem 2.5rem;position:relative;
-  opacity:0;
-  animation:fadeUp .6s ease forwards;
+.feat-name{font-weight:700;font-size:.95rem;margin-bottom:.35rem}
+.feat-desc{font-size:.82rem;color:var(--text-mid);line-height:1.6}
+.feat-tag{
+  display:inline-block;margin-top:.7rem;font-size:.68rem;font-weight:700;
+  padding:.25rem .6rem;border-radius:20px;
+  background:var(--blue-pale);color:var(--blue);border:1px solid var(--blue-mid);
 }
-.pipe-step:nth-child(1){animation-delay:.1s}
-.pipe-step:nth-child(3){animation-delay:.3s}
-.pipe-step:nth-child(5){animation-delay:.5s}
-.pipe-step:nth-child(7){animation-delay:.7s}
-.pipe-arrow{color:var(--gold-dim);font-size:1.2rem;padding:0 .5rem}
-.pipe-node{
-  width:70px;height:70px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;font-size:1.6rem;
-  border:2px solid var(--glass-border);background:var(--bg2);
-  position:relative;transition:transform .4s,box-shadow .4s;
+.pipe-row{
+  display:flex;align-items:center;flex-wrap:wrap;gap:.4rem;
+  font-size:.82rem;color:var(--text-mid);
 }
-.pipe-node::before{
-  content:'';position:absolute;inset:-4px;border-radius:50%;
-  background:conic-gradient(var(--gold),transparent,var(--gold));
-  opacity:0;transition:opacity .4s;z-index:-1;
-  animation:rotate 4s linear infinite;
-}
-.pipe-step:hover .pipe-node{transform:scale(1.1)}
-.pipe-step:hover .pipe-node::before{opacity:1}
-@keyframes rotate{to{transform:rotate(360deg)}}
-.pipe-label{
-  font-family:'Syne',sans-serif;font-size:.8rem;font-weight:700;
-  text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);
-}
-.pipe-sub{font-size:.7rem;color:var(--text-dim);opacity:.6}
-
-/* ── FOOTER ── */
-footer{
-  border-top:1px solid var(--glass-border);
-  padding:4rem;display:flex;align-items:center;
-  justify-content:space-between;flex-wrap:wrap;gap:2rem;
-  color:var(--text-dim);font-size:.8rem;
-}
-.footer-logo{
-  font-family:'Syne',sans-serif;font-weight:800;letter-spacing:.15em;
-  color:var(--gold);text-transform:uppercase;
+.pipe-chip{
+  background:var(--blue-pale);color:var(--blue);
+  padding:.3rem .65rem;border-radius:20px;font-weight:600;
 }
 
-/* ── ANIMATIONS ── */
-@keyframes fadeUp{
-  from{opacity:0;transform:translateY(30px)}
-  to{opacity:1;transform:translateY(0)}
+/* ── API DOCS PAGE ── */
+.api-intro{
+  background:var(--glass);backdrop-filter:blur(12px);
+  border:1px solid var(--border);border-radius:var(--radius);
+  padding:1.4rem;margin-bottom:1rem;
 }
-@keyframes fadeIn{
-  from{opacity:0}to{opacity:1}
+.api-intro h3{font-weight:800;font-size:1rem;margin-bottom:.4rem}
+.api-intro p{font-size:.85rem;color:var(--text-mid);line-height:1.7}
+.base-url-box{
+  display:inline-flex;align-items:center;gap:.5rem;margin-top:.75rem;
+  background:var(--blue-pale);border:1px solid var(--blue-mid);border-radius:8px;
+  padding:.45rem .85rem;font-size:.78rem;font-family:monospace;color:var(--blue);font-weight:600;
+  word-break:break-all;
+}
+.api-card{
+  background:var(--glass);backdrop-filter:blur(12px);
+  border:1px solid var(--border);border-radius:var(--radius);
+  overflow:hidden;margin-bottom:1rem;
+}
+.api-card-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.75rem 1rem;background:rgba(255,255,255,.5);
+  border-bottom:1px solid var(--border);
+}
+.api-title{font-weight:700;font-size:.85rem}
+.method{font-size:.68rem;font-weight:800;padding:.25rem .6rem;border-radius:6px}
+.get{background:rgba(37,99,235,.1);color:var(--blue)}
+.post{background:rgba(34,197,94,.12);color:#16a34a}
+pre{padding:1.1rem;font-size:.74rem;line-height:1.85;font-family:'Courier New',monospace;color:#334155;overflow-x:auto}
+.kw{color:var(--blue);font-weight:600}
+.str{color:#16a34a}
+.cmt{color:#94a3b8}
+.copy-btn{
+  background:none;border:1px solid var(--border);
+  color:var(--text-light);font-size:.68rem;padding:.25rem .6rem;
+  border-radius:6px;cursor:pointer;transition:.2s;font-family:inherit;
+}
+.copy-btn:hover{border-color:var(--blue);color:var(--blue)}
+.param-table{width:100%;border-collapse:collapse;font-size:.8rem}
+.param-table th{
+  text-align:left;padding:.5rem .85rem;
+  background:rgba(37,99,235,.05);border-bottom:1px solid var(--border);
+  font-weight:700;color:var(--text-mid);font-size:.72rem;text-transform:uppercase;
+}
+.param-table td{padding:.55rem .85rem;border-bottom:1px solid rgba(37,99,235,.06)}
+.param-table tr:last-child td{border:none}
+.param-name{font-family:monospace;color:var(--blue);font-weight:600}
+.param-type{
+  display:inline-block;background:var(--blue-pale);color:var(--blue);
+  font-size:.68rem;font-weight:700;padding:.15rem .45rem;border-radius:4px;
 }
 
-/* ── Reveal on scroll ── */
-.reveal{
-  opacity:0;transform:translateY(40px);
-  transition:opacity .7s ease,transform .7s ease;
+/* ── ABOUT PAGE ── */
+.about-card{
+  background:var(--glass);backdrop-filter:blur(12px);
+  border:1px solid var(--border);border-radius:var(--radius);
+  padding:2rem;text-align:center;margin-bottom:1rem;
 }
-.reveal.visible{opacity:1;transform:none}
+.about-logo{
+  width:72px;height:72px;border-radius:20px;
+  background:linear-gradient(135deg,var(--blue),var(--blue-light));
+  display:flex;align-items:center;justify-content:center;
+  font-size:2rem;margin:0 auto 1rem;
+  box-shadow:0 8px 24px rgba(37,99,235,.3);
+}
+.about-card h2{font-weight:800;font-size:1.3rem;margin-bottom:.4rem;color:var(--blue)}
+.about-card p{color:var(--text-mid);font-size:.88rem;line-height:1.7}
+.stack-grid{display:grid;grid-template-columns:1fr 1fr;gap:.65rem}
+.stack-item{
+  background:var(--glass);backdrop-filter:blur(8px);
+  border:1px solid var(--border);border-radius:12px;
+  padding:1rem;display:flex;align-items:center;gap:.7rem;
+}
+.s-name{font-weight:700;font-size:.875rem}
+.s-desc{font-size:.75rem;color:var(--text-light)}
 
-/* ── Responsive ── */
-@media(max-width:900px){
-  nav{padding:1.2rem 1.5rem}
-  .nav-links{display:none}
-  section{padding:5rem 1.5rem}
-  .demo-section{grid-template-columns:1fr}
-  .api-grid{grid-template-columns:1fr}
-  .hero{padding:6rem 1.5rem 3rem}
+/* ── AD MODAL ── */
+.overlay{
+  display:none;position:fixed;inset:0;z-index:500;
+  background:rgba(15,23,42,.6);backdrop-filter:blur(6px);
+  align-items:center;justify-content:center;padding:1rem;
 }
-
-/* ── Particle glow orbs ── */
-.orb{
-  position:fixed;border-radius:50%;filter:blur(80px);
-  pointer-events:none;z-index:2;
+.overlay.show{display:flex}
+.modal{
+  background:#fff;border-radius:20px;width:min(420px,100%);
+  padding:1.75rem;box-shadow:0 20px 60px rgba(0,0,0,.2);
+  animation:pop .3s cubic-bezier(.2,.8,.2,1);
 }
-.orb-1{
-  width:600px;height:600px;
-  background:radial-gradient(circle,rgba(200,169,110,.07),transparent 70%);
-  top:-200px;right:-200px;
-  animation:drift1 18s ease-in-out infinite alternate;
+@keyframes pop{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem}
+.modal-title{font-weight:800;font-size:1.05rem}
+.modal-x{background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-light)}
+.ad-box{
+  background:linear-gradient(135deg,#eff6ff,#e0f2fe);
+  border:1px solid #bae6fd;border-radius:12px;
+  height:145px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:.45rem;
+  margin-bottom:1.1rem;color:var(--blue);
 }
-.orb-2{
-  width:500px;height:500px;
-  background:radial-gradient(circle,rgba(100,80,200,.05),transparent 70%);
-  bottom:-100px;left:-150px;
-  animation:drift2 22s ease-in-out infinite alternate;
+.cd-wrap{margin-bottom:1.1rem}
+.cd-bg{height:7px;background:#e2e8f0;border-radius:4px;overflow:hidden}
+.cd-bar{height:100%;width:100%;border-radius:4px;background:linear-gradient(90deg,var(--blue2),var(--blue-light));transition:width 1s linear}
+.cd-txt{font-size:.78rem;color:var(--text-mid);margin-top:.45rem;text-align:center}
+.modal-dl{
+  width:100%;padding:.9rem;border-radius:10px;
+  background:linear-gradient(135deg,var(--blue2),var(--blue));
+  color:#fff;border:none;font-family:inherit;font-size:.92rem;font-weight:700;
+  cursor:pointer;box-shadow:0 4px 14px rgba(37,99,235,.3);transition:.2s;
 }
-@keyframes drift1{0%{transform:translate(0,0)}100%{transform:translate(-60px,80px)}}
-@keyframes drift2{0%{transform:translate(0,0)}100%{transform:translate(80px,-60px)}}
-
-/* Toaster */
+.modal-dl:disabled{opacity:.4;cursor:not-allowed;background:#94a3b8;box-shadow:none}
+.modal-dl:not(:disabled):hover{transform:translateY(-1px)}
 .toast{
-  position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(100px);
-  background:var(--bg2);border:1px solid var(--glass-border);
-  padding:.75rem 1.5rem;border-radius:4rem;
-  color:var(--text);font-size:.85rem;
-  transition:transform .4s cubic-bezier(.2,.8,.2,1);
-  z-index:1000;pointer-events:none;
+  position:fixed;bottom:1.5rem;left:50%;
+  transform:translateX(-50%) translateY(80px);
+  background:#1e293b;color:#fff;padding:.6rem 1.2rem;
+  border-radius:8px;font-size:.82rem;font-weight:500;
+  transition:transform .3s cubic-bezier(.2,.8,.2,1);z-index:999;
+  white-space:nowrap;pointer-events:none;
 }
 .toast.show{transform:translateX(-50%) translateY(0)}
-.toast.gold{border-color:var(--gold);color:var(--gold)}
+.toast.ok{background:var(--blue)}
+.toast.err{background:#dc2626}
+.gap{margin-top:1rem}
 </style>
 </head>
 <body>
-
-<!-- Cursor -->
-<div id="cursor"></div>
-<div id="cursor-ring"></div>
-
-<!-- 3D Background Canvas -->
-<canvas id="bg-canvas"></canvas>
-<div id="noise"></div>
-
-<!-- Ambient orbs -->
-<div class="orb orb-1"></div>
-<div class="orb orb-2"></div>
-
+<canvas id="cvs"></canvas>
 <div id="app">
 
-<!-- NAV -->
-<nav>
-  <div class="logo">LUM<span>EX</span></div>
-  <ul class="nav-links">
-    <li><a href="#features">Features</a></li>
-    <li><a href="#demo">Live Demo</a></li>
-    <li><a href="#api">API Docs</a></li>
-    <li><a href="#pipeline">Pipeline</a></li>
-  </ul>
-  <div class="nav-badge">Free &amp; Open Source</div>
-</nav>
+<!-- HEADER -->
+<header>
+  <div class="hdr">
+    <div class="logo">
+      <div class="logo-box">✨</div>PixelUp
+    </div>
+    <div class="hdr-right">
+      <div class="free-badge">Free</div>
+      <div class="menu-btn" id="menuBtn" onclick="toggleMenu()">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  </div>
+  <div class="dropdown" id="dropdown">
+    <div class="dd-item act" onclick="switchTab('enhance');closeMenu()">✨ Enhance Photo</div>
+    <div class="dd-item" onclick="switchTab('features');closeMenu()">⚡ Features</div>
+    <div class="dd-item" onclick="switchTab('api');closeMenu()">📡 API Docs</div>
+    <div class="dd-sep"></div>
+    <div class="dd-item" onclick="switchTab('about');closeMenu()">ℹ️ About</div>
+  </div>
+</header>
 
-<!-- HERO -->
-<section class="hero">
-  <div class="hero-label">AI-Powered Enhancement Engine</div>
-  <h1>Restore.<br/><span class="gold">Enhance.</span><br/>Transcend.</h1>
-  <p class="hero-sub">
-    Production-grade image enhancement microservice. Upscale up to 4× with Real-ESRGAN,
-    restore faces, eliminate noise — all free, local, and infinitely scalable.
-  </p>
-  <div class="hero-cta">
-    <a href="#demo" class="btn-primary">Try Live Demo</a>
-    <a href="#api" class="btn-ghost">View API Docs</a>
-  </div>
-  <div class="scroll-indicator">
-    <div class="scroll-line"></div>
-    <span>Scroll to explore</span>
-  </div>
-</section>
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" data-tab="enhance" onclick="switchTab('enhance')">✨ Enhance</div>
+  <div class="tab" data-tab="features" onclick="switchTab('features')">⚡ Features</div>
+  <div class="tab" data-tab="api" onclick="switchTab('api')">📡 API Docs</div>
+  <div class="tab" data-tab="about" onclick="switchTab('about')">ℹ️ About</div>
+</div>
 
-<!-- STATS -->
-<div class="stats-bar reveal">
-  <div class="stat">
-    <span class="stat-num" data-target="4">0</span>
-    <span class="stat-label">× Max Upscale</span>
+<!-- ══ ENHANCE PAGE ══ -->
+<div class="page active" id="page-enhance">
+
+  <!-- BIG HERO -->
+  <div class="hero">
+    <div class="hero-badge">🚀 AI-Powered · 100% Free · No Signup</div>
+    <h1>Make Your Photos<br/>Look Incredible</h1>
+    <p>Upload any photo and our AI will upscale, restore faces, remove noise and sharpen it — all in seconds.</p>
+    <div class="hero-pills">
+      <div class="h-pill">⬆️ 2× / 4× Upscale</div>
+      <div class="h-pill">👤 Face Restore</div>
+      <div class="h-pill">✨ Denoise</div>
+      <div class="h-pill">🔬 Sharpen</div>
+      <div class="h-pill">🆓 2K Free</div>
+      <div class="h-pill">📺 4K via Ad</div>
+    </div>
+    <!-- Stats -->
+    <div class="hero-stats">
+      <div class="h-stat">
+        <span class="h-stat-num">4×</span>
+        <span class="h-stat-lbl">Max Scale</span>
+      </div>
+      <div class="h-stat">
+        <span class="h-stat-num">4</span>
+        <span class="h-stat-lbl">AI Steps</span>
+      </div>
+      <div class="h-stat">
+        <span class="h-stat-num">₹0</span>
+        <span class="h-stat-lbl">Cost</span>
+      </div>
+      <div class="h-stat">
+        <span class="h-stat-num">PNG</span>
+        <span class="h-stat-lbl">Output</span>
+      </div>
+    </div>
+    <div class="hero-divider">Upload below to get started</div>
   </div>
-  <div class="stat">
-    <span class="stat-num" data-target="4">0</span>
-    <span class="stat-label">AI Models Ready</span>
+
+  <!-- UPLOAD -->
+  <div class="upload-zone" id="zone" onclick="document.getElementById('fi').click()">
+    <input type="file" id="fi" accept="image/*"/>
+    <div id="uDef">
+      <div class="u-icon">🖼️</div>
+      <div class="u-title">Drop your photo here</div>
+      <div class="u-hint">JPEG · PNG · WEBP supported</div>
+      <div class="u-chip">Choose Photo</div>
+    </div>
+    <div id="uPrev" style="display:none">
+      <img class="prev-img" id="pImg" src="" alt=""/>
+      <div class="prev-name" id="pName"></div>
+    </div>
   </div>
-  <div class="stat">
-    <span class="stat-num" data-target="100">0</span>
-    <span class="stat-label">% Open Source</span>
+
+  <!-- CONTROLS -->
+  <div class="ctrl-row">
+    <div class="ctrl-card">
+      <div class="ctrl-head">Enhance Options</div>
+      <div class="tog-row">
+        <div class="tog-name"><span>⬆️</span> Upscale</div>
+        <label class="tog"><input type="checkbox" id="tUp" checked/><div class="tog-track"></div><div class="tog-thumb"></div></label>
+      </div>
+      <div class="tog-row">
+        <div class="tog-name"><span>👤</span> Face Restore</div>
+        <label class="tog"><input type="checkbox" id="tFace" checked/><div class="tog-track"></div><div class="tog-thumb"></div></label>
+      </div>
+      <div class="tog-row">
+        <div class="tog-name"><span>✨</span> Denoise</div>
+        <label class="tog"><input type="checkbox" id="tDen" checked/><div class="tog-track"></div><div class="tog-thumb"></div></label>
+      </div>
+      <div class="tog-row">
+        <div class="tog-name"><span>🔬</span> Sharpen</div>
+        <label class="tog"><input type="checkbox" id="tSharp" checked/><div class="tog-track"></div><div class="tog-thumb"></div></label>
+      </div>
+    </div>
+    <div class="ctrl-card">
+      <div class="ctrl-head">Upscale Factor</div>
+      <div class="sc-btns">
+        <button class="sc-btn active" data-sc="2">2×</button>
+        <button class="sc-btn" data-sc="4">4×</button>
+      </div>
+      <div class="quality-info">
+        🆓 <b>2K</b> — Free, no ads<br/>
+        📺 <b>4K</b> — Watch a short ad
+      </div>
+    </div>
   </div>
-  <div class="stat">
-    <span class="stat-num" data-target="0">0</span>
-    <span class="stat-label">₹ Cost / Month</span>
+
+  <button class="enh-btn" id="eBtn" disabled>
+    <div class="spin" id="sp"></div>
+    <span id="eLbl">Select a Photo First</span>
+  </button>
+  <div class="prog-wrap" id="pw"><div class="prog-bar" id="pb"></div></div>
+
+  <!-- RESULT -->
+  <div class="result-sec" id="rs">
+    <div class="r-lbl">✅ Enhanced Result</div>
+    <div class="r-img-wrap">
+      <img id="rImg" src="" alt="Enhanced"/>
+      <div class="r-tag">AI Enhanced</div>
+    </div>
+    <div class="dl-box">
+      <div class="dl-title">Download Your Image</div>
+      <div class="dl-sub">2K is always free · 4K needs a quick ad watch</div>
+      <div class="dl-grid">
+        <button class="dl-btn dl-free" id="dl2k">
+          <div class="dl-q">⬇ 2K Free</div>
+          <div class="dl-n">🆓 Instant, no ads</div>
+        </button>
+        <button class="dl-btn dl-4k" id="dl4k">
+          <div class="dl-q">⬇ 4K HD</div>
+          <div class="dl-n">📺 Watch a short ad</div>
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- FEATURES -->
-<section id="features">
-  <div class="section-header reveal">
-    <span class="section-tag">Capabilities</span>
-    <h2 class="section-title">Four Pillars of<br/>Enhancement</h2>
+<!-- ══ FEATURES PAGE ══ -->
+<div class="page" id="page-features">
+  <div class="feat-hero">
+    <h2>What PixelUp Can Do</h2>
+    <p>Four powerful AI enhancements, all free and all running on real open-source models.</p>
   </div>
-  <div class="features-grid reveal">
-    <div class="feature-card">
-      <div class="feature-icon">⬆️</div>
-      <div class="feature-title">AI Upscaling</div>
-      <div class="feature-desc">Real-ESRGAN super-resolution delivers photorealistic 2× and 4× enlargements. Auto-falls back to Lanczos on minimal environments.</div>
-      <span class="feature-tag">Real-ESRGAN</span>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">👤</div>
-      <div class="feature-title">Face Restoration</div>
-      <div class="feature-desc">GFPGAN deep face restoration recovers detail from degraded photos. OpenCV CLAHE + seamlessClone fallback ensures it always works.</div>
-      <span class="feature-tag">GFPGAN + OpenCV</span>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">✨</div>
-      <div class="feature-title">Smart Denoising</div>
-      <div class="feature-desc">Non-Local Means algorithm removes grain while preserving edges. Works on sensor noise, JPEG artifacts, and scanned print noise.</div>
-      <span class="feature-tag">NLM Color</span>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">🔬</div>
-      <div class="feature-title">Precision Sharpening</div>
-      <div class="feature-desc">Unsharp Mask post-processing recovers fine textures lost in compression. Applied last in the pipeline for maximum effect.</div>
-      <span class="feature-tag">Unsharp Mask</span>
-    </div>
+  <div class="feat-grid">
+    <div class="feat-card"><div class="feat-ico">⬆️</div><div class="feat-name">AI Upscaling</div><div class="feat-desc">Real-ESRGAN super-resolution delivers 2× or 4× enlargements. Lanczos fallback ensures it always works.</div><span class="feat-tag">Real-ESRGAN</span></div>
+    <div class="feat-card"><div class="feat-ico">👤</div><div class="feat-name">Face Restoration</div><div class="feat-desc">GFPGAN recovers facial details from blurry or old photos. OpenCV CLAHE fallback always available.</div><span class="feat-tag">GFPGAN + OpenCV</span></div>
+    <div class="feat-card"><div class="feat-ico">✨</div><div class="feat-name">Smart Denoising</div><div class="feat-desc">Non-Local Means removes grain and JPEG artifacts while keeping edges sharp.</div><span class="feat-tag">NLM Color</span></div>
+    <div class="feat-card"><div class="feat-ico">🔬</div><div class="feat-name">Precision Sharpening</div><div class="feat-desc">Unsharp Mask applied last in the pipeline for maximum detail recovery.</div><span class="feat-tag">Unsharp Mask</span></div>
   </div>
-</section>
+  <div class="ctrl-card gap">
+    <div class="ctrl-head">Processing Pipeline</div>
+    <div class="pipe-row">
+      <span class="pipe-chip">📥 Input</span>→
+      <span class="pipe-chip">⬆️ Upscale</span>→
+      <span class="pipe-chip">✨ Denoise</span>→
+      <span class="pipe-chip">👤 Face</span>→
+      <span class="pipe-chip">🔬 Sharpen</span>→
+      <span class="pipe-chip">📤 Output</span>
+    </div>
+    <div style="margin-top:.8rem;font-size:.8rem;color:var(--text-light)">Each step is isolated — if one fails, the rest continue normally.</div>
+  </div>
+</div>
 
-<!-- DEMO -->
-<section id="demo" style="background:rgba(200,169,110,0.015);border-top:1px solid var(--glass-border);border-bottom:1px solid var(--glass-border)">
-  <div class="section-header reveal">
-    <span class="section-tag">Live Playground</span>
-    <h2 class="section-title">See the Difference<br/>Instantly</h2>
+<!-- ══ API DOCS PAGE ══ -->
+<div class="page" id="page-api">
+  <div class="api-intro">
+    <h3>📡 REST API Reference</h3>
+    <p>Send images via multipart POST, receive enhanced PNG/JPEG in response. Simple and fast.</p>
+    <div class="base-url-box">🔗 https://bg-of-image-enhancement.onrender.com</div>
   </div>
-  <div class="demo-section reveal">
-    <!-- Upload + preview -->
-    <div>
-      <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
-        <span class="upload-icon">📷</span>
-        <div class="upload-text">Drop your image here</div>
-        <div class="upload-hint">JPEG · PNG · WEBP — up to 20 MB</div>
-        <input type="file" id="file-input" accept="image/*"/>
-      </div>
-      <div class="result-box" id="result-box">
-        <img id="result-img" src="" alt="Enhanced"/>
-        <div class="result-badge">Enhanced</div>
-      </div>
-      <div class="progress-wrap" id="progress-wrap">
-        <div class="progress-bar" id="progress-bar"></div>
-      </div>
+  <div class="api-card">
+    <div class="api-card-head">
+      <div class="api-title">Health Check</div>
+      <div style="display:flex;gap:.5rem;align-items:center"><span class="method get">GET</span><button class="copy-btn" onclick="copyPre(this)">Copy</button></div>
     </div>
-    <!-- Controls -->
-    <div class="controls">
-      <div class="control-group">
-        <span class="ctrl-label">Enhancement Modes</span>
-        <div class="toggle-row">
-          <span class="toggle-name">⬆ Upscaling</span>
-          <label class="toggle"><input type="checkbox" id="tog-upscale" checked/><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
-        </div>
-        <div class="toggle-row">
-          <span class="toggle-name">👤 Face Restore</span>
-          <label class="toggle"><input type="checkbox" id="tog-face" checked/><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
-        </div>
-        <div class="toggle-row">
-          <span class="toggle-name">✨ Denoise</span>
-          <label class="toggle"><input type="checkbox" id="tog-denoise" checked/><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
-        </div>
-        <div class="toggle-row">
-          <span class="toggle-name">🔬 Sharpen</span>
-          <label class="toggle"><input type="checkbox" id="tog-sharpen" checked/><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
-        </div>
-      </div>
-      <div class="control-group">
-        <span class="ctrl-label">Upscale Factor</span>
-        <div class="scale-btns">
-          <button class="scale-btn active" data-scale="2">2×</button>
-          <button class="scale-btn" data-scale="4">4×</button>
-        </div>
-      </div>
-      <div class="control-group">
-        <span class="ctrl-label">API Endpoint</span>
-        <input id="api-url" style="
-          width:100%;background:rgba(255,255,255,0.04);
-          border:1px solid var(--glass-border);border-radius:.6rem;
-          padding:.7rem 1rem;color:var(--text);font-size:.85rem;
-          font-family:monospace;outline:none;
-        " value="https://bg-of-image-enhancement.onrender.com" placeholder="http://localhost:8000"/>
-      </div>
-      <button class="run-btn" id="run-btn" disabled>
-        <div class="spinner" id="spinner"></div>
-        <span id="run-label">Select an Image First</span>
-      </button>
-      <div id="download-row" style="display:none;text-align:center">
-        <a id="download-link" class="btn-ghost" style="display:inline-block;padding:.8rem 2rem;font-size:.8rem" download="enhanced.png">
-          ↓ Download Enhanced Image
-        </a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- PIPELINE -->
-<section id="pipeline">
-  <div class="section-header reveal">
-    <span class="section-tag">Architecture</span>
-    <h2 class="section-title">The Enhancement Pipeline</h2>
-  </div>
-  <div class="pipeline">
-    <div class="pipe-step">
-      <div class="pipe-node">📥</div>
-      <div class="pipe-label">Input</div>
-      <div class="pipe-sub">JPEG / PNG</div>
-    </div>
-    <div class="pipe-arrow">──▶</div>
-    <div class="pipe-step">
-      <div class="pipe-node">⬆️</div>
-      <div class="pipe-label">Upscale</div>
-      <div class="pipe-sub">ESRGAN / Lanczos</div>
-    </div>
-    <div class="pipe-arrow">──▶</div>
-    <div class="pipe-step">
-      <div class="pipe-node">✨</div>
-      <div class="pipe-label">Denoise</div>
-      <div class="pipe-sub">NLM Color</div>
-    </div>
-    <div class="pipe-arrow">──▶</div>
-    <div class="pipe-step">
-      <div class="pipe-node">👤</div>
-      <div class="pipe-label">Face Restore</div>
-      <div class="pipe-sub">GFPGAN / OpenCV</div>
-    </div>
-    <div class="pipe-arrow">──▶</div>
-    <div class="pipe-step">
-      <div class="pipe-node">🔬</div>
-      <div class="pipe-label">Sharpen</div>
-      <div class="pipe-sub">Unsharp Mask</div>
-    </div>
-    <div class="pipe-arrow">──▶</div>
-    <div class="pipe-step">
-      <div class="pipe-node">📤</div>
-      <div class="pipe-label">Output</div>
-      <div class="pipe-sub">PNG / JPEG</div>
-    </div>
-  </div>
-  <div style="text-align:center;margin-top:3rem;color:var(--text-dim);font-size:.85rem;max-width:600px;margin-left:auto;margin-right:auto;line-height:1.8" class="reveal">
-    Each stage is <strong style="color:var(--gold)">independently isolated</strong>. A failure in Face Restore won't affect Denoising.
-    Every step logs its backend, timing, and status to the response report.
-  </div>
-</section>
-
-<!-- API REFERENCE -->
-<section id="api" style="background:rgba(200,169,110,0.015);border-top:1px solid var(--glass-border)">
-  <div class="section-header reveal">
-    <span class="section-tag">Developer Reference</span>
-    <h2 class="section-title">Simple, Powerful API</h2>
-  </div>
-  <div class="api-grid reveal">
-    <div class="code-card">
-      <div class="code-header">
-        <span class="code-title">Health Check</span>
-        <div style="display:flex;align-items:center;gap:.75rem">
-          <span class="method-badge get">GET</span>
-          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-        </div>
-      </div>
-      <pre><span class="cmt"># cURL</span>
-<span class="kw">curl</span> http://localhost:8000/health
+    <pre>GET /health
 
 <span class="cmt"># Response</span>
-{
-  <span class="str">"status"</span>: <span class="str">"ok"</span>,
-  <span class="str">"capabilities"</span>: {
-    <span class="str">"upscale"</span>: {
-      <span class="str">"backend"</span>: <span class="str">"realesrgan"</span>
-    },
-    <span class="str">"face_restore"</span>: {
-      <span class="str">"available"</span>: <span class="kw">true</span>
-    }
-  }
-}</pre>
-    </div>
-    <div class="code-card">
-      <div class="code-header">
-        <span class="code-title">Enhance Image</span>
-        <div style="display:flex;align-items:center;gap:.75rem">
-          <span class="method-badge post">POST</span>
-          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-        </div>
-      </div>
-      <pre><span class="cmt"># cURL — all features, 2x scale</span>
-<span class="kw">curl</span> -X POST \
-  <span class="str">"http://localhost:8000/enhance?\
-upscale=true&scale=2&\
-face_restore=true&\
-denoise=true&sharpen=true"</span> \
-  -F <span class="str">"file=@photo.jpg"</span> \
-  -o enhanced.png</pre>
-    </div>
-    <div class="code-card">
-      <div class="code-header">
-        <span class="code-title">JavaScript Fetch</span>
-        <div style="display:flex;align-items:center;gap:.75rem">
-          <span class="method-badge post">POST</span>
-          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-        </div>
-      </div>
-      <pre><span class="kw">const</span> fd = <span class="kw">new</span> FormData();
-fd.append(<span class="str">'file'</span>, imageFile);
-
-<span class="kw">const</span> res = <span class="kw">await</span> fetch(
-  <span class="str">`http://localhost:8000/enhance
-    ?upscale=true&scale=2
-    &face_restore=true
-    &denoise=true&sharpen=true`</span>,
-  { method: <span class="str">'POST'</span>, body: fd }
-);
-<span class="kw">const</span> blob = <span class="kw">await</span> res.blob();
-<span class="kw">const</span> url = URL.createObjectURL(blob);</pre>
-    </div>
-    <div class="code-card">
-      <div class="code-header">
-        <span class="code-title">Python Requests</span>
-        <div style="display:flex;align-items:center;gap:.75rem">
-          <span class="method-badge post">POST</span>
-          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-        </div>
-      </div>
-      <pre><span class="kw">import</span> requests
-
-<span class="kw">with</span> open(<span class="str">"photo.jpg"</span>, <span class="str">"rb"</span>) <span class="kw">as</span> f:
-  res = requests.post(
-    <span class="str">"http://localhost:8000/enhance"</span>,
-    params={
-      <span class="str">"upscale"</span>: <span class="kw">True</span>,
-      <span class="str">"scale"</span>: 2,
-      <span class="str">"face_restore"</span>: <span class="kw">True</span>,
-      <span class="str">"denoise"</span>: <span class="kw">True</span>,
-    },
-    files={<span class="str">"file"</span>: f},
-  )
-
-<span class="kw">with</span> open(<span class="str">"out.png"</span>,<span class="str">"wb"</span>) <span class="kw">as</span> f:
-  f.write(res.content)</pre>
-    </div>
+{ <span class="str">"status"</span>: <span class="str">"ok"</span>, <span class="str">"capabilities"</span>: { ... } }</pre>
   </div>
-</section>
+  <div class="api-card">
+    <div class="api-card-head">
+      <div class="api-title">Enhance Image</div>
+      <div style="display:flex;gap:.5rem;align-items:center"><span class="method post">POST</span><button class="copy-btn" onclick="copyPre(this)">Copy</button></div>
+    </div>
+    <pre>POST /enhance?upscale=true&scale=2&face_restore=true&denoise=true&sharpen=true
 
-<!-- FOOTER -->
-<footer class="reveal">
-  <div class="footer-logo">LUMEX</div>
-  <div>Free · Open Source · Run Locally · No API Keys · No Rate Limits</div>
-  <div>FastAPI + Real-ESRGAN + GFPGAN + OpenCV</div>
-</footer>
+<span class="cmt"># Body: multipart/form-data</span>
+file: &lt;image file&gt;
+
+<span class="cmt"># Response: image/png</span></pre>
+  </div>
+  <div class="api-card">
+    <div class="api-card-head"><div class="api-title">cURL Example</div><button class="copy-btn" onclick="copyPre(this)">Copy</button></div>
+    <pre><span class="kw">curl</span> -X POST \
+  <span class="str">"https://bg-of-image-enhancement.onrender.com/enhance?upscale=true&scale=2"</span> \
+  -F <span class="str">"file=@photo.jpg"</span> -o enhanced.png</pre>
+  </div>
+  <div class="api-card">
+    <div class="api-card-head"><div class="api-title">Parameters</div></div>
+    <table class="param-table">
+      <tr><th>Param</th><th>Type</th><th>Default</th><th>Info</th></tr>
+      <tr><td class="param-name">upscale</td><td><span class="param-type">bool</span></td><td>true</td><td>Enable upscaling</td></tr>
+      <tr><td class="param-name">face_restore</td><td><span class="param-type">bool</span></td><td>true</td><td>Restore faces</td></tr>
+      <tr><td class="param-name">denoise</td><td><span class="param-type">bool</span></td><td>true</td><td>Remove noise</td></tr>
+      <tr><td class="param-name">sharpen</td><td><span class="param-type">bool</span></td><td>true</td><td>Sharpen image</td></tr>
+      <tr><td class="param-name">scale</td><td><span class="param-type">int</span></td><td>2</td><td>2 or 4</td></tr>
+      <tr><td class="param-name">output_format</td><td><span class="param-type">str</span></td><td>PNG</td><td>PNG or JPEG</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ══ ABOUT PAGE ══ -->
+<div class="page" id="page-about">
+  <div class="about-card">
+    <div class="about-logo">✨</div>
+    <h2>PixelUp</h2>
+    <p>Free, open-source AI image enhancement. No account, no watermarks, no limits. Powered by real open-source AI models.</p>
+  </div>
+  <div class="stack-grid">
+    <div class="stack-item"><span style="font-size:1.3rem">⚡</span><div><div class="s-name">FastAPI</div><div class="s-desc">Python backend</div></div></div>
+    <div class="stack-item"><span style="font-size:1.3rem">🔺</span><div><div class="s-name">Real-ESRGAN</div><div class="s-desc">AI upscaling</div></div></div>
+    <div class="stack-item"><span style="font-size:1.3rem">👤</span><div><div class="s-name">GFPGAN</div><div class="s-desc">Face restoration</div></div></div>
+    <div class="stack-item"><span style="font-size:1.3rem">👁️</span><div><div class="s-name">OpenCV</div><div class="s-desc">Denoise + sharpen</div></div></div>
+    <div class="stack-item"><span style="font-size:1.3rem">🌐</span><div><div class="s-name">Render.com</div><div class="s-desc">Free hosting</div></div></div>
+    <div class="stack-item"><span style="font-size:1.3rem">📄</span><div><div class="s-name">GitHub Pages</div><div class="s-desc">Frontend host</div></div></div>
+  </div>
+  <div class="ctrl-card gap" style="font-size:.85rem;color:var(--text-mid);line-height:1.8">
+    <div class="ctrl-head">Version Info</div>
+    <b>PixelUp v1.0.0</b><br/>
+    Backend: FastAPI 0.111 · Python 3.11<br/>
+    License: MIT — Free to use and modify
+  </div>
+</div>
 
 </div><!-- #app -->
 
-<!-- Toast -->
+<!-- AD MODAL -->
+<div class="overlay" id="adOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">📺 Quick Ad for 4K</div>
+      <button class="modal-x" onclick="closeAd()">✕</button>
+    </div>
+    <div class="ad-box">
+      <div style="font-size:2.2rem">📢</div>
+      <div style="font-weight:700;font-size:.9rem;color:var(--blue)">Advertisement</div>
+      <div style="font-size:.75rem;color:var(--text-light)">Integrate your ad SDK here</div>
+    </div>
+    <div class="cd-wrap">
+      <div class="cd-bg"><div class="cd-bar" id="cdBar"></div></div>
+      <div class="cd-txt" id="cdTxt">Please wait <b id="cdNum">5</b> seconds...</div>
+    </div>
+    <button class="modal-dl" id="mDl" disabled>⏳ Please wait...</button>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
-// ── Custom Cursor ──────────────────────────────────────────────────────────────
-const cursor = document.getElementById('cursor');
-const ring = document.getElementById('cursor-ring');
-let mx = 0, my = 0, rx = 0, ry = 0;
-document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
-function animCursor() {
-  cursor.style.left = mx + 'px'; cursor.style.top = my + 'px';
-  rx += (mx - rx) * .12; ry += (my - ry) * .12;
-  ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
-  requestAnimationFrame(animCursor);
-}
-animCursor();
-document.querySelectorAll('button,a,.toggle,.upload-zone,.scale-btn').forEach(el => {
-  el.addEventListener('mouseenter', () => {
-    cursor.style.width = '24px'; cursor.style.height = '24px';
-    ring.style.width = '60px'; ring.style.height = '60px'; ring.style.opacity = '.8';
-  });
-  el.addEventListener('mouseleave', () => {
-    cursor.style.width = '12px'; cursor.style.height = '12px';
-    ring.style.width = '40px'; ring.style.height = '40px'; ring.style.opacity = '.5';
-  });
-});
+// ── API URL hidden — never shown in UI ─────────────────────────────
+const _E='https://bg-of-image-enhancement.onrender.com';
 
-// ── Three.js 3D Background ─────────────────────────────────────────────────────
-(function() {
-  const canvas = document.getElementById('bg-canvas');
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setClearColor(0x000000, 0);
-
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
-  camera.position.z = 50;
-
-  // ── Floating particles ─────────────────────────────────────────────────────
-  const COUNT = 1800;
-  const positions = new Float32Array(COUNT * 3);
-  const colors = new Float32Array(COUNT * 3);
-  const sizes = new Float32Array(COUNT);
-  const colorGold = new THREE.Color(0xc8a96e);
-  const colorDim = new THREE.Color(0x3a2a10);
-  const colorBlue = new THREE.Color(0x1a1030);
-
-  for (let i = 0; i < COUNT; i++) {
-    positions[i * 3] = (Math.random() - .5) * 120;
-    positions[i * 3 + 1] = (Math.random() - .5) * 120;
-    positions[i * 3 + 2] = (Math.random() - .5) * 80;
-    const mix = Math.random();
-    const c = mix < .3 ? colorGold : mix < .6 ? colorDim : colorBlue;
-    colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b;
-    sizes[i] = Math.random() * 2 + .3;
+// ── THREE.JS 3D ────────────────────────────────────────────────────
+(function(){
+  const c=document.getElementById('cvs');
+  const r=new THREE.WebGLRenderer({canvas:c,antialias:true,alpha:true});
+  r.setPixelRatio(Math.min(devicePixelRatio,2));r.setSize(innerWidth,innerHeight);
+  r.setClearColor(0,0);
+  const s=new THREE.Scene(),cam=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.1,200);
+  cam.position.z=55;
+  const N=1600,p=new Float32Array(N*3),col=new Float32Array(N*3),sz=new Float32Array(N);
+  const c1=new THREE.Color(0x2563eb),c2=new THREE.Color(0x93c5fd),c3=new THREE.Color(0xbfdbfe);
+  for(let i=0;i<N;i++){
+    p[i*3]=(Math.random()-.5)*140;p[i*3+1]=(Math.random()-.5)*140;p[i*3+2]=(Math.random()-.5)*80;
+    const cl=Math.random()<.3?c1:Math.random()<.5?c2:c3;
+    col[i*3]=cl.r;col[i*3+1]=cl.g;col[i*3+2]=cl.b;sz[i]=Math.random()*2+.4;
   }
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-  geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-
-  const mat = new THREE.PointsMaterial({
-    vertexColors: true, transparent: true, opacity: .7,
-    size: 1.2, sizeAttenuation: true,
-  });
-  const particles = new THREE.Points(geo, mat);
-  scene.add(particles);
-
-  // ── Geometric torus knots ──────────────────────────────────────────────────
-  const torusGeo = new THREE.TorusKnotGeometry(14, .35, 180, 16, 2, 5);
-  const torusMat = new THREE.MeshBasicMaterial({
-    color: 0xc8a96e, wireframe: true, transparent: true, opacity: .05,
-  });
-  const torus = new THREE.Mesh(torusGeo, torusMat);
-  torus.position.set(30, -10, -20);
-  scene.add(torus);
-
-  const torus2Geo = new THREE.TorusGeometry(20, .2, 12, 80);
-  const torus2 = new THREE.Mesh(torus2Geo, new THREE.MeshBasicMaterial({
-    color: 0x6040b0, wireframe: true, transparent: true, opacity: .04,
-  }));
-  torus2.position.set(-35, 10, -30);
-  torus2.rotation.x = Math.PI / 3;
-  scene.add(torus2);
-
-  // ── Icosahedron ───────────────────────────────────────────────────────────
-  const icoGeo = new THREE.IcosahedronGeometry(8, 1);
-  const icoMat = new THREE.MeshBasicMaterial({
-    color: 0xc8a96e, wireframe: true, transparent: true, opacity: .06,
-  });
-  const ico = new THREE.Mesh(icoGeo, icoMat);
-  ico.position.set(-25, -15, -10);
-  scene.add(ico);
-
-  // ── Mouse interaction ──────────────────────────────────────────────────────
-  let targetX = 0, targetY = 0, currentX = 0, currentY = 0;
-  document.addEventListener('mousemove', e => {
-    targetX = (e.clientX / window.innerWidth - .5) * 2;
-    targetY = -(e.clientY / window.innerHeight - .5) * 2;
-  });
-
-  let t = 0;
-  function animate() {
-    requestAnimationFrame(animate);
-    t += .004;
-
-    // Smooth camera drift
-    currentX += (targetX - currentX) * .02;
-    currentY += (targetY - currentY) * .02;
-    camera.position.x = currentX * 6;
-    camera.position.y = currentY * 4;
-    camera.lookAt(0, 0, 0);
-
-    // Rotate everything gently
-    particles.rotation.y = t * .04;
-    particles.rotation.x = Math.sin(t * .06) * .08;
-    torus.rotation.x = t * .15;
-    torus.rotation.y = t * .08;
-    torus2.rotation.z = t * .04;
-    ico.rotation.y = t * .2;
-    ico.rotation.x = t * .1;
-
-    // Animate particle positions (shimmer effect on a few)
-    const pos = geo.attributes.position.array;
-    for (let i = 0; i < 80; i++) {
-      const idx = i * 27 * 3;
-      if (idx + 1 < pos.length) {
-        pos[idx + 1] += Math.sin(t * 2 + i) * .01;
-      }
-    }
-    geo.attributes.position.needsUpdate = true;
-    renderer.render(scene, camera);
-  }
-  animate();
-
-  window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-  });
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.BufferAttribute(p,3));
+  g.setAttribute('color',new THREE.BufferAttribute(col,3));
+  const pts=new THREE.Points(g,new THREE.PointsMaterial({vertexColors:true,transparent:true,opacity:.5,size:1.1,sizeAttenuation:true}));
+  s.add(pts);
+  const wire=(G,color,op,x,y,z,rx=0,ry=0)=>{
+    const m=new THREE.Mesh(G,new THREE.MeshBasicMaterial({color,wireframe:true,transparent:true,opacity:op}));
+    m.position.set(x,y,z);m.rotation.set(rx,ry,0);s.add(m);return m;
+  };
+  const tk=wire(new THREE.TorusKnotGeometry(12,.3,160,14,2,5),0x3b82f6,.055,28,-8,-20);
+  const tr=wire(new THREE.TorusGeometry(18,.18,10,70),0x2563eb,.04,-32,10,-28,Math.PI/3);
+  const ic=wire(new THREE.IcosahedronGeometry(7,1),0x60a5fa,.065,-24,-14,-8);
+  let tx=0,ty=0,cx=0,cy=0,t=0;
+  document.addEventListener('mousemove',e=>{tx=(e.clientX/innerWidth-.5)*2;ty=-(e.clientY/innerHeight-.5)*2});
+  (function a(){
+    requestAnimationFrame(a);t+=.004;
+    cx+=(tx-cx)*.018;cy+=(ty-cy)*.018;
+    cam.position.x=cx*5;cam.position.y=cy*3;cam.lookAt(0,0,0);
+    pts.rotation.y=t*.035;pts.rotation.x=Math.sin(t*.05)*.06;
+    tk.rotation.x=t*.13;tk.rotation.y=t*.07;
+    tr.rotation.z=t*.035;ic.rotation.y=t*.18;ic.rotation.x=t*.09;
+    r.render(s,cam);
+  })();
+  window.addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();r.setSize(innerWidth,innerHeight)});
 })();
 
-// ── Scroll reveal ──────────────────────────────────────────────────────────────
-const observer = new IntersectionObserver(entries => {
-  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-}, { threshold: .12 });
-document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-
-// ── Animated counters ─────────────────────────────────────────────────────────
-const numObserver = new IntersectionObserver(entries => {
-  entries.forEach(e => {
-    if (!e.isIntersecting) return;
-    const el = e.target;
-    const target = +el.dataset.target;
-    const dur = 1200;
-    const start = performance.now();
-    const step = now => {
-      const p = Math.min((now - start) / dur, 1);
-      el.textContent = Math.round(p * target) + (target === 100 ? '' : target === 0 ? '' : '');
-      if (p < 1) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-    numObserver.unobserve(el);
-  });
-}, { threshold: .5 });
-document.querySelectorAll('[data-target]').forEach(el => numObserver.observe(el));
-
-// ── Scale buttons ─────────────────────────────────────────────────────────────
-let selectedScale = 2;
-document.querySelectorAll('.scale-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.scale-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    selectedScale = +btn.dataset.scale;
-  });
-});
-
-// ── File upload & demo ─────────────────────────────────────────────────────────
-const uploadZone = document.getElementById('upload-zone');
-const fileInput = document.getElementById('file-input');
-const runBtn = document.getElementById('run-btn');
-const runLabel = document.getElementById('run-label');
-const spinner = document.getElementById('spinner');
-const progressWrap = document.getElementById('progress-wrap');
-const progressBar = document.getElementById('progress-bar');
-const resultBox = document.getElementById('result-box');
-const resultImg = document.getElementById('result-img');
-const downloadRow = document.getElementById('download-row');
-const downloadLink = document.getElementById('download-link');
-let selectedFile = null;
-
-// Drag & drop
-uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag'); });
-uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag'));
-uploadZone.addEventListener('drop', e => {
-  e.preventDefault(); uploadZone.classList.remove('drag');
-  const f = e.dataTransfer.files[0];
-  if (f) setFile(f);
-});
-fileInput.addEventListener('change', () => { if (fileInput.files[0]) setFile(fileInput.files[0]); });
-
-function setFile(f) {
-  selectedFile = f;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    uploadZone.innerHTML = `<img src="${ev.target.result}" style="max-width:100%;max-height:200px;border-radius:.5rem;object-fit:cover"/>
-    <div style="margin-top:1rem;color:var(--gold);font-size:.85rem">${f.name} · ${(f.size/1024).toFixed(0)} KB</div>`;
-  };
-  reader.readAsDataURL(f);
-  runBtn.disabled = false;
-  runLabel.textContent = 'Enhance Image';
-  showToast('Image loaded! Configure options and enhance.', true);
+// ── TABS ──────────────────────────────────────────────────────────
+function switchTab(n){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===n));
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+n));
+  const map=['enhance','features','api','about'];
+  document.querySelectorAll('.dd-item').forEach((d,i)=>d.classList.toggle('act',map[i]===n));
+  window.scrollTo({top:0,behavior:'smooth'});
 }
+function toggleMenu(){
+  document.getElementById('menuBtn').classList.toggle('open');
+  document.getElementById('dropdown').classList.toggle('show');
+}
+function closeMenu(){
+  document.getElementById('menuBtn').classList.remove('open');
+  document.getElementById('dropdown').classList.remove('show');
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.menu-btn')&&!e.target.closest('.dropdown'))closeMenu();
+});
 
-runBtn.addEventListener('click', async () => {
-  if (!selectedFile) return;
-  const apiUrl = document.getElementById('api-url').value.replace(/\/$/, '');
-  const upscale = document.getElementById('tog-upscale').checked;
-  const faceRestore = document.getElementById('tog-face').checked;
-  const denoise = document.getElementById('tog-denoise').checked;
-  const sharpen = document.getElementById('tog-sharpen').checked;
+// ── UPLOAD ────────────────────────────────────────────────────────
+const zone=document.getElementById('zone'),fi=document.getElementById('fi');
+let file=null,blob=null,scale=2,cdTimer=null;
+zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag')});
+zone.addEventListener('dragleave',()=>zone.classList.remove('drag'));
+zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag');if(e.dataTransfer.files[0])pick(e.dataTransfer.files[0])});
+fi.addEventListener('change',()=>{if(fi.files[0])pick(fi.files[0])});
+function pick(f){
+  file=f;blob=null;
+  const rd=new FileReader();
+  rd.onload=ev=>{
+    document.getElementById('pImg').src=ev.target.result;
+    document.getElementById('pName').textContent=f.name+' · '+(f.size/1024).toFixed(0)+' KB';
+    document.getElementById('uDef').style.display='none';
+    document.getElementById('uPrev').style.display='block';
+  };
+  rd.readAsDataURL(f);
+  document.getElementById('eBtn').disabled=false;
+  document.getElementById('eLbl').textContent='✨ Enhance Photo';
+  document.getElementById('rs').style.display='none';
+  toast('Photo selected! Click Enhance.','ok');
+}
+document.querySelectorAll('.sc-btn').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.sc-btn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');scale=+b.dataset.sc;
+  });
+});
 
-  // UI: loading state
-  runBtn.disabled = true;
-  spinner.style.display = 'block';
-  runLabel.textContent = 'Enhancing...';
-  progressWrap.style.display = 'block';
-  progressBar.style.width = '0%';
-  resultBox.style.display = 'none';
-  downloadRow.style.display = 'none';
-
-  // Fake progress animation while waiting
-  let prog = 0;
-  const progInterval = setInterval(() => {
-    prog = Math.min(prog + Math.random() * 8, 85);
-    progressBar.style.width = prog + '%';
-  }, 200);
-
-  const url = `${apiUrl}/enhance?upscale=${upscale}&face_restore=${faceRestore}&denoise=${denoise}&sharpen=${sharpen}&scale=${selectedScale}&output_format=PNG`;
-  const fd = new FormData();
-  fd.append('file', selectedFile);
-
-  try {
-    const res = await fetch(url, { method: 'POST', body: fd });
-    clearInterval(progInterval);
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ detail: res.statusText }));
-      throw new Error(err.detail || 'Server error');
-    }
-    progressBar.style.width = '100%';
-    const blob = await res.blob();
-    const objUrl = URL.createObjectURL(blob);
-    resultImg.src = objUrl;
-    resultBox.style.display = 'block';
-    downloadLink.href = objUrl;
-    downloadRow.style.display = 'block';
-    showToast('✅ Enhancement complete!', true);
-  } catch (err) {
-    clearInterval(progInterval);
-    progressBar.style.background = '#e05050';
-    progressBar.style.width = '100%';
-    showToast('⚠ ' + err.message, false);
-  } finally {
-    spinner.style.display = 'none';
-    runLabel.textContent = 'Enhance Again';
-    runBtn.disabled = false;
-    setTimeout(() => { progressWrap.style.display = 'none'; progressBar.style.width = '0'; progressBar.style.background = ''; }, 2000);
+// ── ENHANCE ───────────────────────────────────────────────────────
+document.getElementById('eBtn').addEventListener('click',async()=>{
+  if(!file)return;
+  const btn=document.getElementById('eBtn'),sp=document.getElementById('sp'),lbl=document.getElementById('eLbl');
+  const pw=document.getElementById('pw'),pb=document.getElementById('pb'),rs=document.getElementById('rs');
+  btn.disabled=true;sp.style.display='block';lbl.textContent='Enhancing...';
+  pw.style.display='block';pb.style.width='0%';rs.style.display='none';blob=null;
+  let prog=0;const iv=setInterval(()=>{prog=Math.min(prog+Math.random()*14,88);pb.style.width=prog+'%'},300);
+  const up=document.getElementById('tUp').checked,fc=document.getElementById('tFace').checked;
+  const dn=document.getElementById('tDen').checked,sh=document.getElementById('tSharp').checked;
+  const url=`${_E}/enhance?upscale=${up}&face_restore=${fc}&denoise=${dn}&sharpen=${sh}&scale=${scale}&output_format=PNG`;
+  const fd=new FormData();fd.append('file',file);
+  try{
+    const res=await fetch(url,{method:'POST',body:fd});
+    clearInterval(iv);
+    if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.detail||'Server error '+res.status)}
+    pb.style.width='100%';
+    blob=await res.blob();
+    document.getElementById('rImg').src=URL.createObjectURL(blob);
+    rs.style.display='block';
+    rs.scrollIntoView({behavior:'smooth',block:'start'});
+    toast('✅ Done! Download your photo.','ok');
+  }catch(e){
+    clearInterval(iv);pb.style.background='#ef4444';pb.style.width='100%';
+    toast('❌ '+e.message,'err');
+  }finally{
+    sp.style.display='none';lbl.textContent='✨ Enhance Again';btn.disabled=false;
+    setTimeout(()=>{pw.style.display='none';pb.style.width='0';pb.style.background=''},2200);
   }
 });
 
-// ── Copy code ──────────────────────────────────────────────────────────────────
-function copyCode(btn) {
-  const pre = btn.closest('.code-card').querySelector('pre');
-  navigator.clipboard.writeText(pre.innerText);
-  btn.textContent = 'Copied!';
-  setTimeout(() => btn.textContent = 'Copy', 2000);
-}
+// ── DOWNLOADS ─────────────────────────────────────────────────────
+document.getElementById('dl2k').addEventListener('click',()=>{
+  if(!blob)return;
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='pixelup-2k.png';a.click();
+  toast('📥 2K download started!','ok');
+});
+document.getElementById('dl4k').addEventListener('click',()=>{if(blob)openAd()});
 
-// ── Toast ──────────────────────────────────────────────────────────────────────
-function showToast(msg, gold = false) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast' + (gold ? ' gold' : '') + ' show';
-  clearTimeout(t._tid);
-  t._tid = setTimeout(() => t.className = 'toast' + (gold ? ' gold' : ''), 3000);
+// ── AD ─────────────────────────────────────────────────────────────
+function openAd(){
+  const ov=document.getElementById('adOverlay'),bar=document.getElementById('cdBar');
+  const num=document.getElementById('cdNum'),btn=document.getElementById('mDl'),txt=document.getElementById('cdTxt');
+  ov.classList.add('show');
+  btn.disabled=true;btn.textContent='⏳ Please wait...';
+  bar.style.transition='none';bar.style.width='100%';num.textContent=5;
+  clearInterval(cdTimer);let s=5;
+  setTimeout(()=>{
+    bar.style.transition='width 1s linear';
+    cdTimer=setInterval(()=>{
+      s--;num.textContent=s;bar.style.width=(s/5*100)+'%';
+      if(s<=0){clearInterval(cdTimer);btn.disabled=false;btn.textContent='⬇️ Download 4K Now';txt.innerHTML='✅ Done! 4K image ready.'}
+    },1000);
+  },80);
+}
+function closeAd(){document.getElementById('adOverlay').classList.remove('show');clearInterval(cdTimer)}
+document.getElementById('adOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('adOverlay'))closeAd()});
+document.getElementById('mDl').addEventListener('click',()=>{
+  if(!blob)return;
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='pixelup-4k.png';a.click();
+  closeAd();toast('📥 4K download started!','ok');
+});
+function copyPre(btn){
+  navigator.clipboard.writeText(btn.closest('.api-card').querySelector('pre').innerText);
+  btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);
+}
+function toast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast '+(type||'')+' show';
+  clearTimeout(t._t);t._t=setTimeout(()=>t.className='toast '+(type||''),3000);
 }
 </script>
 </body>
